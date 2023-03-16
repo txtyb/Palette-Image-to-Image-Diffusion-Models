@@ -13,6 +13,11 @@ class GroupNorm32(nn.GroupNorm):
         return super().forward(x.float()).type(x.dtype)
 
 
+class BatchNorm32(nn.BatchNorm):
+    def forward(self, x):
+        return super().forward(x.float()).type(x.dtype)
+
+
 def zero_module(module):
     """
     Zero out the parameters of a module and return it.
@@ -45,7 +50,7 @@ def normalization(channels):
     :param channels: number of input channels.
     :return: an nn.Module for normalization.
     """
-    return GroupNorm32(32, channels)
+    return BatchNorm32(32, channels)
 
 
 
