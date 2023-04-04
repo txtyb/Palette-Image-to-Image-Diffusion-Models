@@ -17,7 +17,7 @@ def is_image_file(filename):
 
 def make_dataset(dir):
     if os.path.isfile(dir):
-        images = [i for i in np.genfromtxt(dir, dtype=np.str, encoding='utf-8')]
+        images = [i for i in np.genfromtxt(dir, dtype=str, encoding='utf-8')]
     else:
         images = []
         assert os.path.isdir(dir), '%s is not a valid directory' % dir
@@ -172,5 +172,43 @@ class ColorizationDataset(data.Dataset):
 
     def __len__(self):
         return len(self.flist)
+
+class ColorizationDataset2(data.Dataset):
+    def __init__(self, data_root, data_flist, data_len=-1, image_size=[224, 224], loader=pil_loader, image_ext='png', zfill=6):
+        self.data_root = data_root
+        flist = make_dataset(data_flist)
+        if data_len > 0:
+            self.flist = flist[:int(data_len)]
+        else:
+            self.flist = flist
+        self.tfs = transforms.Compose([
+                transforms.Resize((image_size[0], image_size[1])),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5,0.5, 0.5])
+        ])
+        self.loader = loader
+        self.image_size = image_size
+        self.ext = '.' + image_ext
+        self.zfill = zfill
+
+    def __getitem__(self, index):
+        ret = {}
+        file_name = str(self.flist[index]).zfill(self.zfill) + self.ext
+
+        img_c = self.loader('{}/{}'.format(self.data_root, file_name))
+        img = self.tfs(img_c)
+        img_g = img_c.convert('L')
+        img_g = img_g.convert('RGB')
+        cond_image = self.tfs(img_g)
+
+        ret['gt_image'] = img
+        ret['cond_image'] = cond_image
+        ret['path'] = file_name
+        return ret
+
+    def __len__(self):
+        return len(self.flist)
+
+
 
 
